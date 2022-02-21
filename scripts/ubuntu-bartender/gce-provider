@@ -50,7 +50,8 @@ function build-provider-create {
      --boot-disk-type=pd-ssd \
      --machine-type="$GCE_MACHINE_TYPE" \
      --zone="$GCE_ZONE" \
-     --format='csv[no-heading](EXTERNAL_IP)'
+     --format='csv[no-heading](EXTERNAL_IP)' \
+     --scopes https://www.googleapis.com/auth/devstorage.read_write
   )
 
   _wait-instance-connectable

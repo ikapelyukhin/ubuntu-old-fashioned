@@ -220,6 +220,14 @@ usage: $0 [<options>] -- --series <series> [<ubuntu-old-fashioned-options>]
     --gce-zone <zone>                       Zone in which to create the GCE instance
                                             Value: $GCE_ZONE
 
+    --bucket-name                           GCE bucket name for storing image tarball
+
+    --artifact-src-name                     Artifact source name (what's in series file),
+                                            without extension
+
+    --artifact-dst-name                     Artifact destination name (in the bucket, what CIM expects),
+                                            without extension
+
     --temp-dir-loc                          Parent folder to build the temp dir used
                                             by bartender; note that this must be
                                             a directory that multipass (a strictly-
@@ -250,6 +258,18 @@ done
 while [[ $# -gt 0 ]]
 do
   case $1 in
+    --bucket-name)
+      BUCKET_NAME="$2"
+      shift
+      ;;
+    --artifact-src-name)
+      ARTIFACT_SRC_NAME="$2"
+      shift
+      ;;
+    --artifact-dst-name)
+      ARTIFACT_DST_NAME="$2"
+      shift
+      ;;
     --livecd-rootfs-repo)
       LIVECD_ROOTFS_REPO="$2"
       shift
@@ -363,6 +383,24 @@ if [ -n "$HOOK_EXTRAS_REPO" ] && [ -n "$HOOK_EXTRAS_DIR" ]
 then
   echo "error: cannot specify both --hook-extras-repo and --hook-extras-dir" >&2
   print-usage
+  exit 255
+fi
+
+if [ -z "$BUCKET_NAME" ]
+then
+  echo "error: missing --bucket-name" >&2
+  exit 255
+fi
+
+if [ -z "$ARTIFACT_SRC_NAME" ]
+then
+  echo "error: missing --artifact-src-name" >&2
+  exit 255
+fi
+
+if [ -z "$ARTIFACT_DST_NAME" ]
+then
+  echo "error: missing --artifact-dst-name" >&2
   exit 255
 fi
 
@@ -497,6 +535,9 @@ echo "Mixing drink..."
 echo "(See progress in $bartender_name.log)"
 build-provider-run $bartender_name -- bash mix-old-fashioned &>$bartender_name.log </dev/null
 
-echo "Pouring $drink_name..."
-build-provider-run $bartender_name -- tar czf drink.tar.gz build.output
-build-provider-download $bartender_name drink.tar.gz $drink_name
+build-provider-run $bartender_name -- sudo chown ubuntu .config/
+build-provider-run $bartender_name -- ls -la /home/ubuntu/build.output
+build-provider-run $bartender_name -- gsutil cp "/home/ubuntu/build.output/${ARTIFACT_SRC_NAME}.manifest" "gs://${BUCKET_NAME}/${ARTIFACT_DST_NAME}.manifest"
+build-provider-run $bartender_name -- gsutil -o GSUtil:parallel_composite_upload_threshold=150M cp "/home/ubuntu/build.output/${ARTIFACT_SRC_NAME}.tar.gz" "gs://${BUCKET_NAME}/${ARTIFACT_DST_NAME}.tar.gz"
+
+echo "Uploaded build artifacts to ${BUCKET_NAME}.{tar.gz,manifest}"
