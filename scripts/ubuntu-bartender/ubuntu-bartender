@@ -540,4 +540,4 @@ build-provider-run $bartender_name -- ls -la /home/ubuntu/build.output
 build-provider-run $bartender_name -- gsutil cp "/home/ubuntu/build.output/${ARTIFACT_SRC_NAME}.manifest" "gs://${BUCKET_NAME}/${ARTIFACT_DST_NAME}.manifest"
 build-provider-run $bartender_name -- gsutil -o GSUtil:parallel_composite_upload_threshold=150M cp "/home/ubuntu/build.output/${ARTIFACT_SRC_NAME}.tar.gz" "gs://${BUCKET_NAME}/${ARTIFACT_DST_NAME}.tar.gz"
 
-echo "Uploaded build artifacts to ${BUCKET_NAME}.{tar.gz,manifest}"
+echo "Uploaded build artifacts to ${ARTIFACT_DST_NAME}.{tar.gz,manifest}"
